@@ -73,3 +73,11 @@ WITH (OIDS=FALSE);
 ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 CREATE INDEX "IDX_session_expire" ON "session" ("expire");
+
+ALTER TABLE Employee
+    ADD COLUMN user_id VARCHAR(100);
+
+ALTER TABLE Employee
+    ADD CONSTRAINT fk_employee
+        FOREIGN KEY (user_id)
+            REFERENCES BasicUser(id);

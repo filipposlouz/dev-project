@@ -6,7 +6,7 @@ import Auth from "../Auth";
 
 import Logo from "./devProjectLogo.png";
 
-const Navbar = () => {
+const Navbar = ({ callbackFunction }) => {
   const [clicked, setClicked] = useState(false);
   const [authenticate, setAuthenticate] = useState(false);
 
@@ -14,6 +14,7 @@ const Navbar = () => {
     const checkAuth = async () => {
       await Auth.getUserState();
       setAuthenticate(Auth.isAuthenticated());
+      if (Auth.isAuthenticated()) callbackFunction(Auth.getRole());
     };
     checkAuth();
   }, []);
@@ -43,12 +44,6 @@ const Navbar = () => {
         </li>
         <li>
           {authenticate ? SignOut(clicked, setAuthenticate) : SignIn(clicked)}
-          {/* <a
-            href="http://localhost:5000/google"
-            className={clicked ? `nav-links active` : `nav-links`}
-          >
-            {authenticate ? Auth.getEmail() : "Είσοδος"}
-          </a> */}
         </li>
       </ul>
     </nav>
