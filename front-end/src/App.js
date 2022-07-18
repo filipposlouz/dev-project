@@ -6,7 +6,7 @@ import Home from "./components/Home";
 import "./App.css";
 
 function App() {
-  const [userState, setUserState] = useState("basic");
+  const [userState, setUserState] = useState({ role: "basic", dept: true });
   const callbackFunction = (data) => {
     setUserState(data);
   };

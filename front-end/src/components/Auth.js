@@ -6,6 +6,7 @@ class Auth {
     this.role = null;
     this.name = null;
     this.email = null;
+    this.department = null;
   }
 
   async getUserState() {
@@ -24,6 +25,7 @@ class Auth {
           this.role = res.role;
           this.name = res.name;
           this.email = res.email;
+          this.department = res.department;
           return;
         } else {
           return;
@@ -48,6 +50,10 @@ class Auth {
 
   getRole() {
     return this.role;
+  }
+
+  getDepartment() {
+    return this.department;
   }
 
   isAuthenticated() {

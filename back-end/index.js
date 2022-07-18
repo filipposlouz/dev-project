@@ -66,13 +66,23 @@ app.get("/success", async (req, res) => {
       checkIfExistsAdmin.rows.length === 0
     ) {
       const userID = await pool.query(
-        `INSERT INTO BasicUser(id) VALUES(${req.user.id});`
+        `INSERT INTO BasicUser(id, name, email) VALUES(${req.user.id}, ${req.user.name}, ${req.user.email});`
       );
     }
+
+    const checkIfExistsEmployee = await pool.query(
+      `SELECT * FROM Employee WHERE user_id = '${req.user.id}';`
+    );
+    console.log(checkIfExistsEmployee.rows);
+    if (checkIfExistsEmployee.rows.length === 0) req.session.department = null;
+    else req.session.department = true;
+
     req.session.isAuth = true;
+
     if (checkIfExistsAdmin.rows.length !== 0) req.session.role = "admin";
     else req.session.role = "basic";
-    console.log(res);
+
+    // console.log(res);
     console.log(req.session);
     console.log(req.sessionID);
     res.cookie("sid", req.sessionID);
@@ -122,10 +132,41 @@ app.get("/checkIfAuth", async (req, res) => {
         name: req.user.name,
         email: req.user.email,
         role: req.session.role,
+        department: req.session.department,
       });
     } else {
       res.sendStatus(404);
     }
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+app.post("/setEmployee", async (req, res) => {
+  try {
+    const { dept } = req.body;
+    console.log(dept);
+    console.log(req.sessionID);
+    console.log(req.user.name);
+    console.log(req.user);
+    const checkIfExistsDept = await pool.query(
+      `SELECT * FROM Department WHERE dept_name = '${dept}';`
+    );
+    let deptID = "";
+    if (checkIfExistsDept.rows.length === 0) {
+      const setDept = await pool.query(
+        `INSERT INTO Department(dept_name) VALUES('${dept}');`
+      );
+      console.log(dept);
+      const getDeptID = await pool.query(
+        `SELECT * FROM Department WHERE dept_name = '${dept}';`
+      );
+      deptID = getDeptID.rows[0].id;
+    } else deptID = checkIfExistsDept.rows[0].id;
+    const setEmployee = await pool.query(
+      `INSERT INTO Employee(emp_name, department_id, user_id) VALUES ('${req.user.name}', '${deptID}', '${req.user.id}')`
+    );
+    res.status(200).json({ status: "success" });
   } catch (err) {
     console.error(err);
   }

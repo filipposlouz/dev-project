@@ -1,0 +1,8 @@
+.table-outside-container {
+  display: flex;
+  justify-content: center !important;
+}
+
+.main-container {
+  margin-top: 2rem;
+}

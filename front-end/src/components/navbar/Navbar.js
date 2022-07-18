@@ -9,12 +9,18 @@ import Logo from "./devProjectLogo.png";
 const Navbar = ({ callbackFunction }) => {
   const [clicked, setClicked] = useState(false);
   const [authenticate, setAuthenticate] = useState(false);
+  const [role, setRole] = useState("basic");
 
   useEffect(() => {
     const checkAuth = async () => {
       await Auth.getUserState();
       setAuthenticate(Auth.isAuthenticated());
-      if (Auth.isAuthenticated()) callbackFunction(Auth.getRole());
+      if (Auth.isAuthenticated())
+        await callbackFunction({
+          role: Auth.getRole(),
+          dept: Auth.getDepartment(),
+        });
+      setRole(Auth.getRole());
     };
     checkAuth();
   }, []);
@@ -37,11 +43,16 @@ const Navbar = ({ callbackFunction }) => {
         <span className="bar"></span>
       </a>
       <ul className="nav-menu">
-        <li>
-          <Link to="#" className={clicked ? `nav-links active` : `nav-links`}>
-            Στατιστικά
-          </Link>
-        </li>
+        {role === "basic" ? (
+          ""
+        ) : (
+          <li>
+            <Link to="#" className={clicked ? `nav-links active` : `nav-links`}>
+              Στατιστικά
+            </Link>
+          </li>
+        )}
+
         <li>
           {authenticate ? SignOut(clicked, setAuthenticate) : SignIn(clicked)}
         </li>
