@@ -33,7 +33,7 @@ const BasicModal = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const response = await fetch("http://localhost:5000/setEmployee", {
+    const response = await fetch("http://localhost:5000/api/setEmployee", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -87,7 +87,6 @@ const BasicModal = () => {
 };
 
 const CheckDept = ({ deptState }) => {
-  console.log(deptState);
   return <>{deptState === null ? <BasicModal /> : null}</>;
 };
 

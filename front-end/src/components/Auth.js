@@ -15,11 +15,10 @@ class Auth {
       if (cookie === undefined) {
         return;
       } else {
-        const res = await fetch("http://localhost:5000/checkIfAuth", {
+        const res = await fetch("http://localhost:5000/api/checkIfAuth", {
           method: "GET",
           credentials: "include",
         }).then((res) => res.json());
-        console.log(res);
         if (res.status === "success") {
           this.authenticated = true;
           this.role = res.role;

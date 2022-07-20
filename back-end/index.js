@@ -4,8 +4,10 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const passport = require("passport");
 const session = require("express-session");
+const path = require("path");
 const pgSession = require("connect-pg-simple")(session);
 const pool = require("./db");
+const fileUpload = require("express-fileupload");
 require("./passport-setup");
 
 app.use(
@@ -29,6 +31,12 @@ const corsOptions = {
   credentials: true,
   origin: true,
 };
+
+app.use(
+  fileUpload({
+    createParentPath: true,
+  })
+);
 
 app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -124,7 +132,7 @@ app.get(
   }
 );
 
-app.get("/checkIfAuth", async (req, res) => {
+app.get("/api/checkIfAuth", async (req, res) => {
   try {
     if (req.sessionID) {
       res.status(200).json({
@@ -142,7 +150,7 @@ app.get("/checkIfAuth", async (req, res) => {
   }
 });
 
-app.post("/setEmployee", async (req, res) => {
+app.post("/api/setEmployee", async (req, res) => {
   try {
     const { dept } = req.body;
     console.log(dept);
@@ -171,6 +179,108 @@ app.post("/setEmployee", async (req, res) => {
     console.error(err);
   }
 });
+
+app.post("/api/addCall", async (req, res) => {
+  try {
+    const { client, callInfo } = req.body;
+    console.log(req.body);
+    // Data Fixing
+    if (callInfo.duration.length === 5) {
+      callInfo.duration = "00:" + callInfo.duration;
+    }
+    // Save in Database
+    const getEmployee = await pool.query(
+      `SELECT * FROM Employee WHERE user_id = '${req.user.id}';`
+    );
+    const setClient = await pool.query(
+      `INSERT INTO Client(client_name, phone, email, notes, department_id) VALUES ('${client.clientName}', '${client.phone}', '${client.email}', '${client.notes}', '${getEmployee.rows[0].department_id}');`
+    );
+    const checkIfExistsCallType = await pool.query(
+      `SELECT * FROM CallType WHERE calltype = '${callInfo.calltype}';`
+    );
+    if (checkIfExistsCallType.rows.length === 0) {
+      const setCallType = await pool.query(
+        `INSERT INTO CallType(calltype) VALUES ('${callInfo.calltype}');`
+      );
+    }
+    const getClient = await pool.query(
+      `SELECT * FROM Client WHERE client_name = '${client.clientName}' AND phone = '${client.phone}' AND email = '${client.email}' AND notes = '${client.notes}' AND department_id = '${getEmployee.rows[0].department_id}';`
+    );
+    const setPhoneCall = await pool.query(
+      `INSERT INTO PhoneCall(duration, incoming, notes, calltype, client_id, emp_id) VALUES ('${callInfo.duration}', ${callInfo.incoming}, '${callInfo.notes}', '${callInfo.calltype}', ${getClient.rows[0].id}, ${getEmployee.rows[0].id});`
+    );
+    res.status(200).json({ status: "success" });
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+app.post("/api/uploadFiles", async (req, res) => {
+  try {
+    const file = req.files.File;
+    console.log(req.files.File);
+    const getEmployee = await pool.query(
+      `SELECT * FROM Employee WHERE user_id = '${req.user.id}';`
+    );
+    const getPhoneCall = await pool.query(
+      `SELECT * FROM PhoneCall WHERE emp_id = ${getEmployee.rows[0].id};`
+    );
+    const currentPhoneCall = getPhoneCall.rows.pop();
+    file.mv(
+      path.join(
+        __dirname,
+        "./data",
+        `${currentPhoneCall.id}${file.name.slice(-4)}`
+      ),
+      async (error) => {
+        if (error) {
+          console.error(error);
+        }
+        const setFileInPhoneCall = await pool.query(
+          `UPDATE PhoneCall SET files = '${
+            "/data" + "/" + currentPhoneCall.id + file.name.slice(-4)
+          }' WHERE id = ${currentPhoneCall.id};`
+        );
+        res.status(200).json({
+          status: "success",
+        });
+      }
+    );
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+app.get("/api/getData", async (req, res) => {
+  try {
+    const getEmployee = await pool.query(
+      `SELECT * FROM Employee WHERE user_id = '${req.user.id}';`
+    );
+    const getPhoneCalls = await pool.query(
+      `SELECT * FROM PhoneCall WHERE emp_id = ${getEmployee.rows[0].id};`
+    );
+    let phoneCalls = new Array();
+    for (call of getPhoneCalls.rows) {
+      phoneCalls.push(addClientToObj(call));
+    }
+    Promise.all(phoneCalls)
+      .then((result) => {
+        console.log(result);
+        res.status(200).send(result);
+      })
+      .catch((err) => console.error(err));
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+const addClientToObj = async (call, phoneCalls) => {
+  const getClient = await pool.query(
+    `SELECT * FROM Client WHERE id = ${call.client_id};`
+  );
+  call.clientData = getClient.rows[0];
+  return call;
+};
 
 app.get("/logout", (req, res) => {
   // req.session.destroy((err) => {
