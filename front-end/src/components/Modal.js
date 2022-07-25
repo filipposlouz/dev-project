@@ -86,8 +86,10 @@ const BasicModal = () => {
   );
 };
 
-const CheckDept = ({ deptState }) => {
-  return <>{deptState === null ? <BasicModal /> : null}</>;
+const CheckDept = ({ deptState, userRole }) => {
+  return (
+    <>{deptState === null && userRole !== "admin" ? <BasicModal /> : null}</>
+  );
 };
 
 export default CheckDept;

@@ -256,6 +256,7 @@ app.get("/api/getData", async (req, res) => {
     const getEmployee = await pool.query(
       `SELECT * FROM Employee WHERE user_id = '${req.user.id}';`
     );
+    if (getEmployee.rows.length === 0) return;
     const getPhoneCalls = await pool.query(
       `SELECT * FROM PhoneCall WHERE emp_id = ${getEmployee.rows[0].id};`
     );
@@ -281,6 +282,70 @@ const addClientToObj = async (call, phoneCalls) => {
   call.clientData = getClient.rows[0];
   return call;
 };
+
+app.get("/api/files/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    res.status(200).sendFile(path.join(__dirname, "./data", `${id}.zip`));
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+// MAKE AUTHORIZATION MIDDLEWARE FOR BOTH ROLES
+// ADMIN ROUTES
+app.get("/api/admin/getAllUsers", async (req, res) => {
+  try {
+    const getAllUsers = await pool.query(`SELECT * FROM Employee;`);
+    res.status(200).json(getAllUsers.rows);
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+app.get("/api/admin/getUserData/:user", async (req, res) => {
+  try {
+    const { user } = req.params;
+    if (user === "all") {
+      const getAllUsers = await pool.query(`SELECT * FROM Employee;`);
+      let employeeResponse = new Array();
+      for (employee of getAllUsers.rows) {
+        const getPhoneCalls = await pool.query(
+          `SELECT * FROM PhoneCall WHERE emp_id = ${employee.id};`
+        );
+        if (getPhoneCalls.rows.length === 0) continue;
+        employee.phoneCalls = getPhoneCalls.rows;
+        for (call of employee.phoneCalls) {
+          const getClient = await pool.query(
+            `SELECT * FROM Client WHERE id = ${call.client_id};`
+          );
+          call.clientData = getClient.rows[0];
+        }
+        employeeResponse.push(employee);
+      }
+      Promise.all(employeeResponse)
+        .then((result) => {
+          res.status(200).send(result);
+        })
+        .catch((err) => console.error(err));
+    } else {
+      const getPhoneCalls = await pool.query(
+        `SELECT * FROM PhoneCall WHERE emp_id = ${user};`
+      );
+      let phoneCalls = new Array();
+      for (call of getPhoneCalls.rows) {
+        phoneCalls.push(addClientToObj(call));
+      }
+      Promise.all(phoneCalls)
+        .then((result) => {
+          res.status(200).send(result);
+        })
+        .catch((err) => console.error(err));
+    }
+  } catch (err) {
+    console.error(err);
+  }
+});
 
 app.get("/logout", (req, res) => {
   // req.session.destroy((err) => {

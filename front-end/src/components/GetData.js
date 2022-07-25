@@ -5,8 +5,8 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
-import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
+import RetrieveFiles from "./RetrieveFiles";
 
 const tableCellStyle = {
   fontWeight: "bold",
@@ -17,7 +17,6 @@ const tableCellStyle = {
 
 const GetData = () => {
   const [data, setData] = useState([]);
-  const [run, setRun] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,36 +24,30 @@ const GetData = () => {
         method: "GET",
         credentials: "include",
       }).then((res) => res.json());
-      console.log(response);
       setData(response);
+      console.log(response);
     };
     fetchData();
   }, []);
   return (
     <div style={{ marginTop: "3rem" }}>
-      <strong>Already Submitted Data:</strong>
+      <strong style={{ textDecoration: "underline" }}>
+        {data.length === 0 ? "" : "Already Submitted Data:"}
+      </strong>
       {data.map((elem, index) => {
         return (
-          <div>
+          <div style={{ marginTop: "1rem" }} key={index}>
             <TableContainer
               style={{ backgroundColor: "#FEFCFF" }}
               component={Paper}
-              key={index}
             >
               <Table>
-                {/* <TableHead>
-                  <TableRow>
-                    <TableCell style={tableCellStyle} colSpan={5}>
-                      Client:
-                    </TableCell>
-                  </TableRow>
-                </TableHead> */}
                 <TableHead>
                   <TableRow>
                     <TableCell style={tableCellStyle}>Client Name:</TableCell>
                     <TableCell style={tableCellStyle}>Phone:</TableCell>
                     <TableCell style={tableCellStyle}>Email:</TableCell>
-                    <TableCell style={tableCellStyle}>Notes:</TableCell>
+                    <TableCell style={tableCellStyle}></TableCell>
                     <TableCell style={tableCellStyle}></TableCell>
                   </TableRow>
                 </TableHead>
@@ -75,13 +68,6 @@ const GetData = () => {
                     <TableCell colSpan={4}>{elem.clientData.notes}</TableCell>
                   </TableRow>
                 </TableBody>
-                {/* <TableHead>
-                  <TableRow>
-                    <TableCell style={tableCellStyle} colSpan={5}>
-                      Phone Call:
-                    </TableCell>
-                  </TableRow>
-                </TableHead> */}
                 <TableHead>
                   <TableRow>
                     <TableCell style={tableCellStyle}>
@@ -100,7 +86,9 @@ const GetData = () => {
                       {elem.incoming ? "Incoming" : "Outgoing"}
                     </TableCell>
                     <TableCell>{elem.calltype}</TableCell>
-                    <TableCell>{elem.files}</TableCell>
+                    <TableCell>
+                      <RetrieveFiles id={elem.id} fileIsNotNull={elem.files} />
+                    </TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                   <TableRow>

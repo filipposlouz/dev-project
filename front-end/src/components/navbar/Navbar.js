@@ -43,7 +43,7 @@ const Navbar = ({ callbackFunction }) => {
         <span className="bar"></span>
       </a>
       <ul className="nav-menu">
-        {role === "basic" ? (
+        {role === "basic" || role === null ? (
           ""
         ) : (
           <li>
@@ -81,6 +81,7 @@ const SignOut = (clicked, setAuthenticate) => {
     if (res.status === "success") {
       deleteCookie("sid");
       setAuthenticate(false);
+      window.location.reload();
     }
   };
   return (
