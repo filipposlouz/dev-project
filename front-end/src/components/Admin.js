@@ -15,6 +15,8 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 import RetrieveFiles from "./RetrieveFiles";
+import EditButton from "./EditButton";
+import DelButton from "./DelButton";
 
 const tableCellStyle = {
   fontWeight: "bold",
@@ -39,32 +41,42 @@ const NeutralItem = styled(Paper)(({ theme }) => ({
 }));
 
 const Admin = () => {
-  const [user, setUser] = useState("");
+  const [user, setUser] = useState("all");
   const [userData, setUserData] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
 
   useEffect(() => {
-    const getAllUsers = async () => {
-      const res = await fetch("http://localhost:5000/api/admin/getAllUsers", {
-        method: "GET",
-        credentials: "include",
-      }).then((res) => res.json());
-      setAllUsers(res);
-    };
     getAllUsers();
+    getUserData("all");
   }, []);
 
   const handleChange = async (e) => {
     e.preventDefault();
+    await getUserData(e.target.value);
+    setUser(e.target.value);
+  };
+
+  const getUserData = async (user) => {
     const res = await fetch(
-      `http://localhost:5000/api/admin/getUserData/${e.target.value}`,
+      `http://localhost:5000/api/admin/getUserData/${user}`,
       {
         method: "GET",
         credentials: "include",
       }
     ).then((res) => res.json());
-    setUser(e.target.value);
     setUserData(res);
+  };
+
+  const getAllUsers = async () => {
+    const res = await fetch("http://localhost:5000/api/admin/getAllUsers", {
+      method: "GET",
+      credentials: "include",
+    }).then((res) => res.json());
+    setAllUsers(res);
+  };
+
+  const rerenderFunction = () => {
+    getUserData(user);
   };
 
   return (
@@ -125,12 +137,18 @@ const Admin = () => {
                                       <TableCell style={tableCellStyle}>
                                         Email:
                                       </TableCell>
-                                      <TableCell
-                                        style={tableCellStyle}
-                                      ></TableCell>
-                                      <TableCell
-                                        style={tableCellStyle}
-                                      ></TableCell>
+                                      <TableCell style={tableCellStyle}>
+                                        <EditButton
+                                          phoneCallId={elem.id}
+                                          rerenderFunction={rerenderFunction}
+                                        />
+                                      </TableCell>
+                                      <TableCell style={tableCellStyle}>
+                                        <DelButton
+                                          phoneCallId={elem.id}
+                                          rerenderFunction={rerenderFunction}
+                                        />
+                                      </TableCell>
                                     </TableRow>
                                   </TableHead>
                                   <TableBody>

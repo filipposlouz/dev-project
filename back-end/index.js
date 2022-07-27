@@ -347,6 +347,18 @@ app.get("/api/admin/getUserData/:user", async (req, res) => {
   }
 });
 
+app.delete("/api/admin/delete/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletePhoneCallWithId = await pool.query(
+      `DELETE FROM PhoneCall WHERE id = ${id};`
+    );
+    res.status(200).json({ status: "success" });
+  } catch (err) {
+    console.error(err);
+  }
+});
+
 app.get("/logout", (req, res) => {
   // req.session.destroy((err) => {
   //   if (err) throw err;

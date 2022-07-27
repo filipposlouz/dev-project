@@ -15,10 +15,12 @@ const tableCellStyle = {
   borderBottom: "1px solid black",
 };
 
-const GetData = () => {
+const GetData = ({ rerenderVar }) => {
   const [data, setData] = useState([]);
+  // const [rerender, setRerender] = useState(false);
 
   useEffect(() => {
+    console.log("rerender get data");
     const fetchData = async () => {
       const response = await fetch("http://localhost:5000/api/getData", {
         method: "GET",
@@ -28,7 +30,7 @@ const GetData = () => {
       console.log(response);
     };
     fetchData();
-  }, []);
+  }, [rerenderVar]);
   return (
     <div style={{ marginTop: "3rem" }}>
       <strong style={{ textDecoration: "underline" }}>

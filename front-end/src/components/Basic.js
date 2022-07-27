@@ -42,6 +42,7 @@ const Basic = () => {
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [counter, setCounter] = useState(1);
+  const [rerender, setRerender] = useState(false);
 
   const handleChangeClient = (e) => {
     const name = e.target.name;
@@ -52,7 +53,7 @@ const Basic = () => {
   const handleChangeCall = (e) => {
     const name = e.target.name;
     const value = e.target.value;
-    console.log(callInfo);
+    // console.log(callInfo);
     if (name === "files") {
       const fileValue = e.target.files[0];
       setSelectedFile(fileValue);
@@ -92,6 +93,21 @@ const Basic = () => {
       credentials: "include",
       body: formData,
     }).then((res) => res.json());
+    console.log("rerender", rerender);
+    setRerender(rerender ? false : true);
+    setClient({
+      clientName: "",
+      phone: "",
+      email: "",
+      notes: "",
+    });
+    setCallInfo({
+      duration: "",
+      incoming: "",
+      notes: "",
+      files: undefined,
+      calltype: "",
+    });
   };
 
   return (
@@ -259,7 +275,7 @@ const Basic = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      <GetData />
+      <GetData rerenderVar={rerender} />
     </div>
   );
 };
