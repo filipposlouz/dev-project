@@ -26,7 +26,7 @@ const textFieldStyle = {
   width: "100%",
 };
 
-const Basic = () => {
+const Basic = ({ userRole }) => {
   const [client, setClient] = useState({
     clientName: "",
     phone: "",
@@ -108,6 +108,7 @@ const Basic = () => {
       files: undefined,
       calltype: "",
     });
+    setCounter(1);
   };
 
   return (
@@ -275,7 +276,7 @@ const Basic = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      <GetData rerenderVar={rerender} />
+      <GetData rerenderVar={rerender} userRole={userRole} />
     </div>
   );
 };

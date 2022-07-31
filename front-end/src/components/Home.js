@@ -17,7 +17,13 @@ const Home = ({ userState }) => {
       <div className="table-outside-container">
         <CheckDept deptState={userState.dept} userRole={userState.role} />
         {cookie !== null && cookie !== undefined ? (
-          <>{userState.role === "basic" ? <Basic /> : <Admin />}</>
+          <>
+            {userState.role === "basic" ? (
+              <Basic userRole={userState.role} />
+            ) : (
+              <Admin userRole={userState.role} />
+            )}
+          </>
         ) : (
           <h1>Please Sign in to continue...</h1>
         )}

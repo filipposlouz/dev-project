@@ -8,6 +8,7 @@ const path = require("path");
 const pgSession = require("connect-pg-simple")(session);
 const pool = require("./db");
 const fileUpload = require("express-fileupload");
+const fs = require("fs");
 require("./passport-setup");
 
 app.use(
@@ -192,9 +193,14 @@ app.post("/api/addCall", async (req, res) => {
     const getEmployee = await pool.query(
       `SELECT * FROM Employee WHERE user_id = '${req.user.id}';`
     );
-    const setClient = await pool.query(
-      `INSERT INTO Client(client_name, phone, email, notes, department_id) VALUES ('${client.clientName}', '${client.phone}', '${client.email}', '${client.notes}', '${getEmployee.rows[0].department_id}');`
+    const checkIfClientExists = await pool.query(
+      `SELECT * FROM Client WHERE client_name = '${client.clientName}' AND phone = '${client.phone}' AND email = '${client.email}';`
     );
+    if (checkIfClientExists.rows.length === 0) {
+      const setClient = await pool.query(
+        `INSERT INTO Client(client_name, phone, email, notes, department_id) VALUES ('${client.clientName}', '${client.phone}', '${client.email}', '${client.notes}', '${getEmployee.rows[0].department_id}');`
+      );
+    }
     const checkIfExistsCallType = await pool.query(
       `SELECT * FROM CallType WHERE calltype = '${callInfo.calltype}';`
     );
@@ -204,7 +210,7 @@ app.post("/api/addCall", async (req, res) => {
       );
     }
     const getClient = await pool.query(
-      `SELECT * FROM Client WHERE client_name = '${client.clientName}' AND phone = '${client.phone}' AND email = '${client.email}' AND notes = '${client.notes}' AND department_id = '${getEmployee.rows[0].department_id}';`
+      `SELECT * FROM Client WHERE client_name = '${client.clientName}' AND phone = '${client.phone}' AND email = '${client.email}';`
     );
     const setPhoneCall = await pool.query(
       `INSERT INTO PhoneCall(duration, incoming, notes, calltype, client_id, emp_id) VALUES ('${callInfo.duration}', ${callInfo.incoming}, '${callInfo.notes}', '${callInfo.calltype}', ${getClient.rows[0].id}, ${getEmployee.rows[0].id});`
@@ -292,6 +298,46 @@ app.get("/api/files/:id", async (req, res) => {
   }
 });
 
+app.delete("/api/basic/delete/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const checkPhoneCall = await pool.query(
+      `SELECT * FROM PhoneCall WHERE id = ${id};`
+    );
+    const checkUserId = await pool.query(
+      `SELECT * FROM Employee WHERE id = ${checkPhoneCall.rows[0].emp_id};`
+    );
+    if (checkUserId.rows[0].user_id === req.user.id) {
+      const deletePhoneCallWithId = await pool.query(
+        `DELETE FROM PhoneCall WHERE id = ${id};`
+      );
+      fs.unlinkSync(`.${checkPhoneCall.rows[0].files}`);
+      res.status(200).json({ status: "success" });
+    } else {
+      res.status(401);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+app.put("/api/basic/updateInfo", async (req, res) => {
+  try {
+    const data = req.body;
+    console.log(data);
+    const updateClient =
+      await pool.query(`UPDATE Client SET client_name = '${data.clientData.clientName}', phone = '${data.clientData.phone}',
+    email = '${data.clientData.email}', notes = '${data.clientData.notes}' 
+    WHERE id = ${data.clientData.id};`);
+    const updatePhoneCall =
+      await pool.query(`UPDATE PhoneCall SET duration = '${data.duration}', incoming = ${data.incoming},
+    notes = '${data.notes}', calltype = '${data.calltype}' WHERE id = ${data.id};`);
+    res.status(200).json({ status: "success" });
+  } catch (err) {
+    console.error(err);
+  }
+});
+
 // MAKE AUTHORIZATION MIDDLEWARE FOR BOTH ROLES
 // ADMIN ROUTES
 app.get("/api/admin/getAllUsers", async (req, res) => {
@@ -353,7 +399,124 @@ app.delete("/api/admin/delete/:id", async (req, res) => {
     const deletePhoneCallWithId = await pool.query(
       `DELETE FROM PhoneCall WHERE id = ${id};`
     );
+    fs.unlinkSync(`./data/${id}.zip`);
     res.status(200).json({ status: "success" });
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+app.put("/api/admin/updateInfo", async (req, res) => {
+  try {
+    const data = req.body;
+    console.log(data);
+    const updateClient =
+      await pool.query(`UPDATE Client SET client_name = '${data.clientData.clientName}', phone = '${data.clientData.phone}',
+    email = '${data.clientData.email}', notes = '${data.clientData.notes}' 
+    WHERE id = ${data.clientData.id};`);
+    const updatePhoneCall =
+      await pool.query(`UPDATE PhoneCall SET duration = '${data.duration}', incoming = ${data.incoming},
+    notes = '${data.notes}', calltype = '${data.calltype}' WHERE id = ${data.id};`);
+    res.status(200).json({ status: "success" });
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+app.put("/api/updateFile/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    const file = req.files.File;
+    console.log(req.files.File);
+    file.mv(
+      path.join(__dirname, "./data", `${id}${file.name.slice(-4)}`),
+      async (error) => {
+        if (error) {
+          console.error(error);
+        }
+        const setFileInPhoneCall = await pool.query(
+          `UPDATE PhoneCall SET files = '${
+            "/data" + "/" + id + file.name.slice(-4)
+          }' WHERE id = ${id};`
+        );
+        res.status(200).json({
+          status: "success",
+        });
+      }
+    );
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+app.get("/api/admin/Employee", async (req, res) => {
+  try {
+    const getAllEmployees = await pool.query("SELECT * FROM Employee;");
+    let finalArray = new Array();
+    for (user of getAllEmployees.rows) {
+      const getPhoneCalls = await pool.query(
+        `SELECT * FROM PhoneCall WHERE emp_id = ${user.id};`
+      );
+      if (getPhoneCalls.rows.length === 0) continue;
+      user.phoneCalls = { ...getPhoneCalls.rows };
+      finalArray.push(user);
+    }
+    Promise.all(finalArray)
+      .then((result) => {
+        res.status(200).send(result);
+      })
+      .catch((err) => console.error(err));
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+app.get("/api/admin/Dept", async (req, res) => {
+  try {
+    const getAllDepts = await pool.query("SELECT * FROM Department;");
+    let finalArray = new Array();
+    for (dept of getAllDepts.rows) {
+      const getDeptUsers = await pool.query(
+        `SELECT * FROM Employee WHERE department_id = ${dept.id};`
+      );
+      if (getDeptUsers.rows.length === 0) continue;
+      for (user of getDeptUsers.rows) {
+        const getPhoneCalls = await pool.query(
+          `SELECT * FROM PhoneCall WHERE emp_id = ${user.id};`
+        );
+        if (getPhoneCalls.rows.length === 0) continue;
+        user.phoneCalls = { ...getPhoneCalls.rows };
+        user.deptInfo = { ...dept };
+        finalArray.push(user);
+      }
+    }
+    Promise.all(finalArray)
+      .then((result) => {
+        res.status(200).send(result);
+      })
+      .catch((err) => console.error(err));
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+app.get("/api/admin/Client", async (req, res) => {
+  try {
+    const getAllClients = await pool.query("SELECT * FROM Client;");
+    let finalArray = new Array();
+    for (client of getAllClients.rows) {
+      const getPhoneCalls = await pool.query(
+        `SELECT * FROM PhoneCall WHERE client_id = ${client.id};`
+      );
+      if (getPhoneCalls.rows.length === 0) continue;
+      client.phoneCalls = { ...getPhoneCalls.rows };
+      finalArray.push(client);
+    }
+    Promise.all(finalArray)
+      .then((result) => {
+        res.status(200).send(result);
+      })
+      .catch((err) => console.error(err));
   } catch (err) {
     console.error(err);
   }

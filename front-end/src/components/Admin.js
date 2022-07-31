@@ -6,8 +6,7 @@ import Grid from "@mui/material/Grid";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
-import Select, { SelectChangeEvent } from "@mui/material/Select";
-import { display } from "@mui/system";
+import Select from "@mui/material/Select";
 import Table from "@mui/material/Table";
 import TableHead from "@mui/material/TableHead";
 import TableBody from "@mui/material/TableBody";
@@ -40,7 +39,7 @@ const NeutralItem = styled(Paper)(({ theme }) => ({
   color: theme.palette.text.secondary,
 }));
 
-const Admin = () => {
+const Admin = ({ userRole }) => {
   const [user, setUser] = useState("all");
   const [userData, setUserData] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
@@ -139,14 +138,16 @@ const Admin = () => {
                                       </TableCell>
                                       <TableCell style={tableCellStyle}>
                                         <EditButton
-                                          phoneCallId={elem.id}
+                                          phoneCall={elem}
                                           rerenderFunction={rerenderFunction}
+                                          userRole={userRole}
                                         />
                                       </TableCell>
                                       <TableCell style={tableCellStyle}>
                                         <DelButton
                                           phoneCallId={elem.id}
                                           rerenderFunction={rerenderFunction}
+                                          userRole={userRole}
                                         />
                                       </TableCell>
                                     </TableRow>

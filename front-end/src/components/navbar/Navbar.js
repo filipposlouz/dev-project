@@ -47,7 +47,10 @@ const Navbar = ({ callbackFunction }) => {
           ""
         ) : (
           <li>
-            <Link to="#" className={clicked ? `nav-links active` : `nav-links`}>
+            <Link
+              to="/statistics"
+              className={clicked ? `nav-links active` : `nav-links`}
+            >
               Στατιστικά
             </Link>
           </li>

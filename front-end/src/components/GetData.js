@@ -7,6 +7,8 @@ import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import RetrieveFiles from "./RetrieveFiles";
+import EditButton from "./EditButton";
+import DelButton from "./DelButton";
 
 const tableCellStyle = {
   fontWeight: "bold",
@@ -15,22 +17,28 @@ const tableCellStyle = {
   borderBottom: "1px solid black",
 };
 
-const GetData = ({ rerenderVar }) => {
+const GetData = ({ rerenderVar, userRole }) => {
   const [data, setData] = useState([]);
-  // const [rerender, setRerender] = useState(false);
+  const [newRerender, setNewRerender] = useState(false);
+
+  const fetchData = async () => {
+    const response = await fetch("http://localhost:5000/api/getData", {
+      method: "GET",
+      credentials: "include",
+    }).then((res) => res.json());
+    setData(response);
+    setNewRerender(newRerender ? false : true);
+    console.log(response);
+  };
 
   useEffect(() => {
-    console.log("rerender get data");
-    const fetchData = async () => {
-      const response = await fetch("http://localhost:5000/api/getData", {
-        method: "GET",
-        credentials: "include",
-      }).then((res) => res.json());
-      setData(response);
-      console.log(response);
-    };
     fetchData();
   }, [rerenderVar]);
+
+  const rerenderFunction = async () => {
+    await fetchData();
+  };
+
   return (
     <div style={{ marginTop: "3rem" }}>
       <strong style={{ textDecoration: "underline" }}>
@@ -49,8 +57,20 @@ const GetData = ({ rerenderVar }) => {
                     <TableCell style={tableCellStyle}>Client Name:</TableCell>
                     <TableCell style={tableCellStyle}>Phone:</TableCell>
                     <TableCell style={tableCellStyle}>Email:</TableCell>
-                    <TableCell style={tableCellStyle}></TableCell>
-                    <TableCell style={tableCellStyle}></TableCell>
+                    <TableCell style={tableCellStyle}>
+                      <EditButton
+                        phoneCall={elem}
+                        rerenderFunction={rerenderFunction}
+                        userRole={userRole}
+                      />
+                    </TableCell>
+                    <TableCell style={tableCellStyle}>
+                      <DelButton
+                        phoneCallId={elem.id}
+                        rerenderFunction={rerenderFunction}
+                        userRole={userRole}
+                      />
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -89,7 +109,11 @@ const GetData = ({ rerenderVar }) => {
                     </TableCell>
                     <TableCell>{elem.calltype}</TableCell>
                     <TableCell>
-                      <RetrieveFiles id={elem.id} fileIsNotNull={elem.files} />
+                      <RetrieveFiles
+                        id={elem.id}
+                        fileIsNotNull={elem.files}
+                        rerenderVar={newRerender}
+                      />
                     </TableCell>
                     <TableCell></TableCell>
                   </TableRow>
