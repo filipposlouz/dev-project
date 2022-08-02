@@ -59,11 +59,18 @@ const isAuth = (req, res, next) => {
   else res.sendStatus(401);
 };
 
+const isAuthBasic = (req, res, next) => {
+  if (req.session.isAuth && req.session.role === "basic") next();
+  else res.sendStatus(401);
+};
+
+const isAuthAdmin = (req, res, next) => {
+  if (req.session.isAuth && req.session.role === "admin") next();
+  else res.sendStatus(401);
+};
+
 app.get("/success", async (req, res) => {
   try {
-    console.log("here", req.user);
-    console.log(req.session);
-    console.log(req.sessionID);
     const checkIfExistsBasic = await pool.query(
       `SELECT * FROM BasicUser WHERE id = '${req.user.id}';`
     );
@@ -82,7 +89,6 @@ app.get("/success", async (req, res) => {
     const checkIfExistsEmployee = await pool.query(
       `SELECT * FROM Employee WHERE user_id = '${req.user.id}';`
     );
-    console.log(checkIfExistsEmployee.rows);
     if (checkIfExistsEmployee.rows.length === 0) req.session.department = null;
     else req.session.department = true;
 
@@ -91,9 +97,6 @@ app.get("/success", async (req, res) => {
     if (checkIfExistsAdmin.rows.length !== 0) req.session.role = "admin";
     else req.session.role = "basic";
 
-    // console.log(res);
-    console.log(req.session);
-    console.log(req.sessionID);
     res.cookie("sid", req.sessionID);
     res.redirect("http://localhost:3000");
   } catch (err) {
@@ -128,7 +131,6 @@ app.get(
   passport.authenticate("google", { failureRedirect: "/failed" }),
   function (req, res) {
     // Successful authentication, redirect home.
-    console.log(req.user);
     res.redirect("/success");
   }
 );
@@ -151,13 +153,9 @@ app.get("/api/checkIfAuth", async (req, res) => {
   }
 });
 
-app.post("/api/setEmployee", async (req, res) => {
+app.post("/api/setEmployee", isAuth, async (req, res) => {
   try {
     const { dept } = req.body;
-    console.log(dept);
-    console.log(req.sessionID);
-    console.log(req.user.name);
-    console.log(req.user);
     const checkIfExistsDept = await pool.query(
       `SELECT * FROM Department WHERE dept_name = '${dept}';`
     );
@@ -166,7 +164,6 @@ app.post("/api/setEmployee", async (req, res) => {
       const setDept = await pool.query(
         `INSERT INTO Department(dept_name) VALUES('${dept}');`
       );
-      console.log(dept);
       const getDeptID = await pool.query(
         `SELECT * FROM Department WHERE dept_name = '${dept}';`
       );
@@ -181,10 +178,9 @@ app.post("/api/setEmployee", async (req, res) => {
   }
 });
 
-app.post("/api/addCall", async (req, res) => {
+app.post("/api/addCall", isAuthBasic, async (req, res) => {
   try {
     const { client, callInfo } = req.body;
-    console.log(req.body);
     // Data Fixing
     if (callInfo.duration.length === 5) {
       callInfo.duration = "00:" + callInfo.duration;
@@ -221,10 +217,9 @@ app.post("/api/addCall", async (req, res) => {
   }
 });
 
-app.post("/api/uploadFiles", async (req, res) => {
+app.post("/api/uploadFiles", isAuth, async (req, res) => {
   try {
     const file = req.files.File;
-    console.log(req.files.File);
     const getEmployee = await pool.query(
       `SELECT * FROM Employee WHERE user_id = '${req.user.id}';`
     );
@@ -257,7 +252,7 @@ app.post("/api/uploadFiles", async (req, res) => {
   }
 });
 
-app.get("/api/getData", async (req, res) => {
+app.get("/api/getData", isAuthBasic, async (req, res) => {
   try {
     const getEmployee = await pool.query(
       `SELECT * FROM Employee WHERE user_id = '${req.user.id}';`
@@ -272,7 +267,6 @@ app.get("/api/getData", async (req, res) => {
     }
     Promise.all(phoneCalls)
       .then((result) => {
-        console.log(result);
         res.status(200).send(result);
       })
       .catch((err) => console.error(err));
@@ -289,7 +283,7 @@ const addClientToObj = async (call, phoneCalls) => {
   return call;
 };
 
-app.get("/api/files/:id", async (req, res) => {
+app.get("/api/files/:id", isAuth, async (req, res) => {
   try {
     const { id } = req.params;
     res.status(200).sendFile(path.join(__dirname, "./data", `${id}.zip`));
@@ -298,7 +292,7 @@ app.get("/api/files/:id", async (req, res) => {
   }
 });
 
-app.delete("/api/basic/delete/:id", async (req, res) => {
+app.delete("/api/basic/delete/:id", isAuthBasic, async (req, res) => {
   try {
     const { id } = req.params;
     const checkPhoneCall = await pool.query(
@@ -321,10 +315,9 @@ app.delete("/api/basic/delete/:id", async (req, res) => {
   }
 });
 
-app.put("/api/basic/updateInfo", async (req, res) => {
+app.put("/api/basic/updateInfo", isAuthBasic, async (req, res) => {
   try {
     const data = req.body;
-    console.log(data);
     const updateClient =
       await pool.query(`UPDATE Client SET client_name = '${data.clientData.clientName}', phone = '${data.clientData.phone}',
     email = '${data.clientData.email}', notes = '${data.clientData.notes}' 
@@ -340,7 +333,7 @@ app.put("/api/basic/updateInfo", async (req, res) => {
 
 // MAKE AUTHORIZATION MIDDLEWARE FOR BOTH ROLES
 // ADMIN ROUTES
-app.get("/api/admin/getAllUsers", async (req, res) => {
+app.get("/api/admin/getAllUsers", isAuthAdmin, async (req, res) => {
   try {
     const getAllUsers = await pool.query(`SELECT * FROM Employee;`);
     res.status(200).json(getAllUsers.rows);
@@ -349,7 +342,7 @@ app.get("/api/admin/getAllUsers", async (req, res) => {
   }
 });
 
-app.get("/api/admin/getUserData/:user", async (req, res) => {
+app.get("/api/admin/getUserData/:user", isAuthAdmin, async (req, res) => {
   try {
     const { user } = req.params;
     if (user === "all") {
@@ -393,7 +386,7 @@ app.get("/api/admin/getUserData/:user", async (req, res) => {
   }
 });
 
-app.delete("/api/admin/delete/:id", async (req, res) => {
+app.delete("/api/admin/delete/:id", isAuthAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const deletePhoneCallWithId = await pool.query(
@@ -406,10 +399,9 @@ app.delete("/api/admin/delete/:id", async (req, res) => {
   }
 });
 
-app.put("/api/admin/updateInfo", async (req, res) => {
+app.put("/api/admin/updateInfo", isAuthAdmin, async (req, res) => {
   try {
     const data = req.body;
-    console.log(data);
     const updateClient =
       await pool.query(`UPDATE Client SET client_name = '${data.clientData.clientName}', phone = '${data.clientData.phone}',
     email = '${data.clientData.email}', notes = '${data.clientData.notes}' 
@@ -423,11 +415,10 @@ app.put("/api/admin/updateInfo", async (req, res) => {
   }
 });
 
-app.put("/api/updateFile/:id", (req, res) => {
+app.put("/api/updateFile/:id", isAuth, (req, res) => {
   try {
     const { id } = req.params;
     const file = req.files.File;
-    console.log(req.files.File);
     file.mv(
       path.join(__dirname, "./data", `${id}${file.name.slice(-4)}`),
       async (error) => {
@@ -449,7 +440,7 @@ app.put("/api/updateFile/:id", (req, res) => {
   }
 });
 
-app.get("/api/admin/Employee", async (req, res) => {
+app.get("/api/admin/Employee", isAuthAdmin, async (req, res) => {
   try {
     const getAllEmployees = await pool.query("SELECT * FROM Employee;");
     let finalArray = new Array();
@@ -471,7 +462,7 @@ app.get("/api/admin/Employee", async (req, res) => {
   }
 });
 
-app.get("/api/admin/Dept", async (req, res) => {
+app.get("/api/admin/Dept", isAuthAdmin, async (req, res) => {
   try {
     const getAllDepts = await pool.query("SELECT * FROM Department;");
     let finalArray = new Array();
@@ -500,7 +491,7 @@ app.get("/api/admin/Dept", async (req, res) => {
   }
 });
 
-app.get("/api/admin/Client", async (req, res) => {
+app.get("/api/admin/Client", isAuthAdmin, async (req, res) => {
   try {
     const getAllClients = await pool.query("SELECT * FROM Client;");
     let finalArray = new Array();

@@ -6,7 +6,6 @@ import EditModal from "./EditModal";
 const EditButton = ({ phoneCall, rerenderFunction, userRole }) => {
   const [showModal, setShowModal] = useState(false);
   const handleClick = () => {
-    console.log(phoneCall);
     setShowModal(true);
   };
   return (

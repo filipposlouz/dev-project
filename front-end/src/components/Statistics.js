@@ -34,19 +34,8 @@ const Statistics = () => {
 
   const handleChange = async (e) => {
     e.preventDefault();
-    // getCallData(e.target.value);
     setStatOption(e.target.value);
   };
-
-  // const getCallData = async (statChoice) => {
-  //   console.log(statChoice);
-  //   const res = await fetch(`http://localhost:5000/api/admin/${statChoice}`, {
-  //     method: "GET",
-  //     credentials: "include",
-  //   }).then((res) => res.json());
-  //   console.log(res);
-  //   setUserData(res);
-  // };
 
   return (
     <Fragment>

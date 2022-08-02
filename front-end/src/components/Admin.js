@@ -114,9 +114,16 @@ const Admin = ({ userRole }) => {
               {user === "all" ? (
                 <>
                   {userData.map((outer_elem, index) => {
+                    if (outer_elem.phoneCalls === undefined) {
+                      return;
+                    }
                     return (
                       <div style={{ marginTop: "1rem" }} key={index}>
-                        <h2>{outer_elem.emp_name}</h2>
+                        <h2>
+                          {outer_elem.phoneCalls === undefined
+                            ? ""
+                            : outer_elem.emp_name}
+                        </h2>
                         {outer_elem.phoneCalls.map((elem, index) => {
                           return (
                             <div style={{ marginTop: "1rem" }} key={index}>
@@ -155,13 +162,19 @@ const Admin = ({ userRole }) => {
                                   <TableBody>
                                     <TableRow>
                                       <TableCell>
-                                        {elem.clientData.client_name}
+                                        {elem.clientData === undefined
+                                          ? ""
+                                          : elem.clientData.client_name}
                                       </TableCell>
                                       <TableCell>
-                                        {elem.clientData.phone}
+                                        {elem.clientData === undefined
+                                          ? ""
+                                          : elem.clientData.phone}
                                       </TableCell>
                                       <TableCell>
-                                        {elem.clientData.email}
+                                        {elem.clientData === undefined
+                                          ? ""
+                                          : elem.clientData.email}
                                       </TableCell>
                                       <TableCell></TableCell>
                                       <TableCell></TableCell>
@@ -176,7 +189,9 @@ const Admin = ({ userRole }) => {
                                         Relevant Notes:
                                       </TableCell>
                                       <TableCell colSpan={4}>
-                                        {elem.clientData.notes}
+                                        {elem.clientData === undefined
+                                          ? ""
+                                          : elem.clientData.notes}
                                       </TableCell>
                                     </TableRow>
                                   </TableBody>

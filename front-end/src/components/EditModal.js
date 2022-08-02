@@ -17,6 +17,8 @@ import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 import Paper from "@mui/material/Paper";
 import RetrieveFiles from "./RetrieveFiles";
+import Alert from "@mui/material/Alert";
+import Stack from "@mui/material/Stack";
 
 const style = {
   position: "absolute",
@@ -59,7 +61,7 @@ const EditModal = ({ phoneCall, setShowModal, rerenderFunction, userRole }) => {
     calltype: phoneCall.calltype,
   });
   const [selectedFile, setSelectedFile] = useState(null);
-  const [counter, setCounter] = useState(0);
+  const [dataCheck, setDataCheck] = useState(true);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -76,31 +78,31 @@ const EditModal = ({ phoneCall, setShowModal, rerenderFunction, userRole }) => {
   const handleChangeCall = (e) => {
     const name = e.target.name;
     const value = e.target.value;
-    // console.log(callInfo);
     if (name === "files") {
       const fileValue = e.target.files[0];
       setSelectedFile(fileValue);
     } else {
-      if (name === "duration") {
-        handleChangeTime(e, value);
-      } else setCallInfo({ ...callInfo, [name]: value });
+      setCallInfo({ ...callInfo, [name]: value });
     }
   };
 
-  const handleChangeTime = (e, value) => {
-    setCounter(counter + 1);
-    if (counter === 2 && callInfo.duration.length < 6) {
-      setCallInfo({ ...callInfo, duration: value + ":" });
-      setCounter(1);
-    } else {
-      setCallInfo({ ...callInfo, duration: value });
-    }
+  const dataValidation = (dataToCheck) => {
+    const checkDuration =
+      /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/g.test(dataToCheck.duration) ||
+      /[0-9][0-9]:[0-9][0-9]/g.test(dataToCheck.duration);
+    const checkName = /\d/g.test(dataToCheck.clientData.clientName) === false;
+    const checkEmail = /^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$/g.test(
+      dataToCheck.clientData.email
+    );
+    const checkPhone = /^\s*(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?\s*$/g.test(
+      dataToCheck.clientData.phone
+    );
+    if (checkDuration && checkName && checkEmail && checkPhone) return true;
+    else return false;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setShowModal(false);
-    handleClose();
     const finalData = {
       id: phoneCall.id,
       emp_id: phoneCall.emp_id,
@@ -112,32 +114,35 @@ const EditModal = ({ phoneCall, setShowModal, rerenderFunction, userRole }) => {
         ...client,
       },
     };
-    console.log(finalData);
-    const res = await fetch(
-      `http://localhost:5000/api/${userRole}/updateInfo`,
-      {
-        method: "PUT",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(finalData),
-      }
-    ).then((res) => res.json());
-    if (selectedFile) {
-      const formData = new FormData();
-      formData.append("File", selectedFile);
-      const updateFile = await fetch(
-        `http://localhost:5000/api/updateFile/${finalData.id}`,
+    if (dataValidation(finalData)) {
+      setShowModal(false);
+      handleClose();
+      setDataCheck(true);
+      const res = await fetch(
+        `http://localhost:5000/api/${userRole}/updateInfo`,
         {
           method: "PUT",
           credentials: "include",
-          body: formData,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(finalData),
         }
       ).then((res) => res.json());
-    }
-    console.log(res);
-    rerenderFunction();
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append("File", selectedFile);
+        const updateFile = await fetch(
+          `http://localhost:5000/api/updateFile/${finalData.id}`,
+          {
+            method: "PUT",
+            credentials: "include",
+            body: formData,
+          }
+        ).then((res) => res.json());
+      }
+      rerenderFunction();
+    } else setDataCheck(false);
   };
 
   return (
@@ -240,6 +245,7 @@ const EditModal = ({ phoneCall, setShowModal, rerenderFunction, userRole }) => {
                         id="duration"
                         name="duration"
                         label="Call Duration"
+                        placeholder="HH:MM:SS"
                         value={callInfo.duration}
                         onChange={handleChangeCall}
                         style={textFieldStyle}
@@ -331,6 +337,13 @@ const EditModal = ({ phoneCall, setShowModal, rerenderFunction, userRole }) => {
                 </TableBody>
               </Table>
             </TableContainer>
+            {dataCheck ? (
+              ""
+            ) : (
+              <Stack sx={{ width: "100%", marginTop: "1rem" }} spacing={2}>
+                <Alert severity="error">Please insert correct data.</Alert>
+              </Stack>
+            )}
           </Typography>
         </Box>
       </Modal>

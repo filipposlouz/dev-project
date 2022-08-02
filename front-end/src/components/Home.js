@@ -10,7 +10,6 @@ const Home = ({ userState }) => {
   const [cookie, setCookie] = useState(null);
   useEffect(() => {
     setCookie(getCookie("sid"));
-    console.log(getCookie("sid"));
   }, []);
   return (
     <div className="main-container">

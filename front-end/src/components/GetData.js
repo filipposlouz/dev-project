@@ -28,7 +28,6 @@ const GetData = ({ rerenderVar, userRole }) => {
     }).then((res) => res.json());
     setData(response);
     setNewRerender(newRerender ? false : true);
-    console.log(response);
   };
 
   useEffect(() => {

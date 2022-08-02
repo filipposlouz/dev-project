@@ -11,35 +11,26 @@ const ClientStats = ({ statOption }) => {
   const [userData, setUserData] = useState([]);
 
   const getCallData = async () => {
-    console.log(statOption);
     const res = await fetch(`http://localhost:5000/api/admin/${statOption}`, {
       method: "GET",
       credentials: "include",
     }).then((res) => res.json());
-    console.log(res);
     processData(res);
   };
 
   const processData = (phoneData) => {
-    // setUserData(phoneData);
-    // console.log(phoneData);
     let finalData = new Array();
     phoneData.forEach((elem) => {
-      //   console.log(elem);
       let minDuration = [Infinity, Infinity, Infinity];
       let maxDuration = [-Infinity, -Infinity, -Infinity];
       let median = [0, 0, 0];
       let numOfCalls = Object.keys(elem.phoneCalls).length;
-      console.log("phonecalls", numOfCalls);
-      //   const calls = elem.phoneCalls;
       for (let index in elem.phoneCalls) {
-        console.log(elem.phoneCalls[index]);
         let call = elem.phoneCalls[index];
         let timeSpent = call.duration.split(":");
         timeSpent[0] = parseInt(timeSpent[0]);
         timeSpent[1] = parseInt(timeSpent[1]);
         timeSpent[2] = parseInt(timeSpent[2]);
-        console.log(timeSpent);
         // MIN
         if (minDuration[0] >= timeSpent[0]) {
           if (minDuration[0] > timeSpent[0]) {
@@ -75,7 +66,6 @@ const ClientStats = ({ statOption }) => {
         median[0] += timeSpent[0];
         median[1] += timeSpent[1];
         median[2] += timeSpent[2];
-        console.log("median", median);
       }
       median[0] = median[0] / numOfCalls;
       median[1] = median[1] / numOfCalls;
@@ -88,7 +78,6 @@ const ClientStats = ({ statOption }) => {
         )}:${median[2].toFixed(0)}`,
         numOfCalls: numOfCalls,
       };
-      console.log(elem.stats);
       finalData.push(elem);
     });
     setUserData(finalData);
